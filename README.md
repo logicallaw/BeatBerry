@@ -1,5 +1,9 @@
 # 🍓 BeatBerry
 
+<div align="center">
+  <img src="public/app.png" alt="BeatBerry_introduce-image">
+</div>
+
 **BeatBerry** is a simple and powerful **Universal Audio Converter**.
 Convert audio files (MP3, WAV, FLAC, M4A, etc.) quickly and easily.
 
