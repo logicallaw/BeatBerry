@@ -1,2 +1,6 @@
 .DS_Store
 .idea/
+BeatBerry.app/
+__pycache__/
+outputs/
+*.spec
