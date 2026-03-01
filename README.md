@@ -1,13 +1,15 @@
 # 🍓 BeatBerry
-
 <div align="center">
-  <img src="public/app.png" alt="BeatBerry_introduce-image">
+  <img src="public/app-icon.png" alt="BeatBerry_app-icon">
 </div>
 
 **BeatBerry** is an audio format conversion app for macOS.  
 It uses a SwiftUI-based UI and a bundled FFmpeg engine, so users can convert audio files without installing Conda or Python.
 
 ## ✨ Key Features
+<div align="center">
+  <img src="public/app-introduce.png" alt="BeatBerry_app-introduce">
+</div>
 - Intuitive GUI: batch conversion via file/folder selection
 - Supported formats: `mp3`, `wav`, `flac`, `ogg`, `m4a`
 - Batch processing: progress, logs, and success/failure summary
