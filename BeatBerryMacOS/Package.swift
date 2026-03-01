@@ -49,7 +49,10 @@ let package = Package(
                 "BeatBerryInfrastructure",
                 "BeatBerryDomain"
             ],
-            path: "Sources/App"
+            path: "Sources/App",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "BeatBerryMacOSTests",
