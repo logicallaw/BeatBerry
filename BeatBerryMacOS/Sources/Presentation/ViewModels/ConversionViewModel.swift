@@ -20,10 +20,10 @@ struct ConversionSummary: Identifiable, Sendable {
 
 @MainActor
 public final class ConversionViewModel: ObservableObject {
-    @Published var selectedJobs: [ConversionJob] = []
-    @Published var settings = ConversionSettings()
-    @Published var isConverting = false
-    @Published var isCancellationRequested = false
+    @Published public var selectedJobs: [ConversionJob] = []
+    @Published public var settings = ConversionSettings()
+    @Published public var isConverting = false
+    @Published public var isCancellationRequested = false
     @Published var logs: [String] = []
     @Published var successCount = 0
     @Published var failureCount = 0
@@ -36,8 +36,27 @@ public final class ConversionViewModel: ObservableObject {
     private let convertBatchUseCase: ConvertBatchUseCase
     private let cancellation: ConversionCancellation
 
-    var availableFormats: [AudioFormat] { AudioFormat.allCases }
-    var selectedCountText: String { "\(selectedJobs.count) files selected" }
+    public var availableFormats: [MediaFormat] {
+        let mediaTypes = Set(selectedJobs.map(\.mediaType))
+
+        if mediaTypes == [.video] {
+            return MediaFormat.allCases.filter { $0.mediaType == .video }
+        } else if mediaTypes == [.audio] || mediaTypes.isEmpty {
+            return MediaFormat.allCases.filter { $0.mediaType == .audio }
+        } else {
+            return MediaFormat.allCases
+        }
+    }
+
+    public var selectedCountText: String {
+        let audioCount = selectedJobs.filter { $0.mediaType == .audio }.count
+        let videoCount = selectedJobs.filter { $0.mediaType == .video }.count
+
+        if audioCount > 0 && videoCount > 0 {
+            return "\(selectedJobs.count) files selected (\(audioCount) audio, \(videoCount) video)"
+        }
+        return "\(selectedJobs.count) files selected"
+    }
     var outputPathText: String { settings.outputDirectory?.path ?? "outputs folder next to each input file" }
     var isStartDisabled: Bool { isConverting }
     var isCancelDisabled: Bool { !isConverting }
@@ -60,9 +79,10 @@ public final class ConversionViewModel: ObservableObject {
         self.cancellation = cancellation
     }
 
-    func addFiles(_ urls: [URL]) {
+    public func addFiles(_ urls: [URL]) {
         let result = addFilesUseCase.execute(existingJobs: selectedJobs, addingURLs: urls)
         selectedJobs = result.jobs
+        adjustTargetFormatIfNeeded()
         log("Added \(result.addedCount) file(s).")
     }
 
@@ -76,9 +96,19 @@ public final class ConversionViewModel: ObservableObject {
         }
     }
 
-    func clearSelection() {
+    public func clearSelection() {
         selectedJobs.removeAll()
+        settings.targetFormat = .mp3
         log("Selection cleared.")
+    }
+
+    private func adjustTargetFormatIfNeeded() {
+        let available = availableFormats
+        if !available.contains(settings.targetFormat) {
+            if let first = available.first {
+                settings.targetFormat = first
+            }
+        }
     }
 
     func setOutputDirectory(_ url: URL?) {

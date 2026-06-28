@@ -154,11 +154,23 @@ public struct ContentView: View {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 6) {
                             ForEach(viewModel.selectedJobs) { job in
-                                Text(job.displayName)
-                                    .font(.system(size: 13, weight: .medium))
-                                    .foregroundStyle(BeatBerryTheme.textPrimary)
-                                    .lineLimit(1)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                HStack(spacing: 8) {
+                                    Text(job.mediaType == .audio ? "Audio" : "Video")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundStyle(Color.white)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 4)
+                                                .fill(job.mediaType == .audio ? Color.blue : Color.purple)
+                                        )
+
+                                    Text(job.displayName)
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundStyle(BeatBerryTheme.textPrimary)
+                                        .lineLimit(1)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
                     }
@@ -266,7 +278,27 @@ public struct ContentView: View {
         panel.allowsMultipleSelection = true
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
-        panel.allowedContentTypes = [.audio]
+
+        // Audio formats
+        let audioTypes: [UTType] = [
+            .mp3,
+            .wav,
+            UTType(filenameExtension: "flac") ?? .audio,
+            UTType(filenameExtension: "ogg") ?? .audio,
+            UTType(filenameExtension: "m4a") ?? .audio,
+            UTType(filenameExtension: "wma") ?? .audio
+        ]
+
+        // Video formats (including webm)
+        let videoTypes: [UTType] = [
+            .mpeg4Movie,
+            .quickTimeMovie,
+            .avi,
+            UTType(filenameExtension: "webm") ?? .movie,
+            UTType(filenameExtension: "mkv") ?? .movie
+        ]
+
+        panel.allowedContentTypes = audioTypes + videoTypes
 
         if panel.runModal() == .OK {
             viewModel.addFiles(panel.urls)

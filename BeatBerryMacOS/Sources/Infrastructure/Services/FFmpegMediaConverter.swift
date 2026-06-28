@@ -11,7 +11,7 @@
 import Foundation
 import BeatBerryDomain
 
-public struct FFmpegAudioConverter: AudioConverter {
+public struct FFmpegMediaConverter: AudioConverter {
     private let ffmpegURLProvider: @Sendable () -> URL?
     private let outputPathPolicy: any OutputPathPolicy
 
@@ -82,7 +82,7 @@ public struct FFmpegAudioConverter: AudioConverter {
         } else if lowered.contains("permission denied") {
             mappedPrefix = "Permission denied while accessing file."
         } else if lowered.contains("invalid data found") || lowered.contains("invalid argument") {
-            mappedPrefix = "Unsupported or corrupted audio file."
+            mappedPrefix = "Unsupported or corrupted file."
         } else if lowered.contains("unknown encoder") || lowered.contains("could not find encoder") {
             mappedPrefix = "Encoder for the selected output format was not found."
         } else {

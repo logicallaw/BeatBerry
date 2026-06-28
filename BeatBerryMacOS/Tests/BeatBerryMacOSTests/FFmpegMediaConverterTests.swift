@@ -12,7 +12,7 @@ import XCTest
 import BeatBerryDomain
 import BeatBerryInfrastructure
 
-final class FFmpegAudioConverterTests: XCTestCase {
+final class FFmpegMediaConverterTests: XCTestCase {
     func testConvertSingleFileWithExecutableEngineSuccess() async throws {
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("beatberry-tests-\(UUID().uuidString)")
@@ -26,7 +26,7 @@ final class FFmpegAudioConverterTests: XCTestCase {
         try Data("dummy".utf8).write(to: inputWav)
 
         let outputDir = tempDir.appendingPathComponent("outputs")
-        let engine = FFmpegAudioConverter(ffmpegURLProvider: { fakeFFmpeg })
+        let engine = FFmpegMediaConverter(ffmpegURLProvider: { fakeFFmpeg })
         let settings = ConversionSettings(targetFormat: .mp3, outputDirectory: outputDir)
         let job = ConversionJob(inputURL: inputWav)
 
@@ -59,7 +59,7 @@ final class FFmpegAudioConverterTests: XCTestCase {
         let existing = outputDir.appendingPathComponent("input.mp3")
         try Data("already-exists".utf8).write(to: existing)
 
-        let engine = FFmpegAudioConverter(ffmpegURLProvider: { fakeFFmpeg })
+        let engine = FFmpegMediaConverter(ffmpegURLProvider: { fakeFFmpeg })
         let settings = ConversionSettings(targetFormat: .mp3, outputDirectory: outputDir)
         let job = ConversionJob(inputURL: inputWav)
 
@@ -89,7 +89,7 @@ final class FFmpegAudioConverterTests: XCTestCase {
         try generateInputWav(ffmpegURL: ffmpeg, output: inputWav)
 
         let outputDir = tempDir.appendingPathComponent("outputs")
-        let engine = FFmpegAudioConverter(ffmpegURLProvider: { ffmpeg })
+        let engine = FFmpegMediaConverter(ffmpegURLProvider: { ffmpeg })
         let settings = ConversionSettings(targetFormat: .mp3, outputDirectory: outputDir)
         let job = ConversionJob(inputURL: inputWav)
 
@@ -104,8 +104,38 @@ final class FFmpegAudioConverterTests: XCTestCase {
         }
     }
 
+    func testConvertWebmToMp4WithRealFFmpegIfAvailable() async throws {
+        guard let ffmpeg = FFmpegPathResolver.resolve() else {
+            throw XCTSkip("Skipping real video conversion test: ffmpeg executable not found.")
+        }
+
+        let tempDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("beatberry-video-tests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tempDir) }
+
+        let inputWebm = tempDir.appendingPathComponent("input.webm")
+        try generateInputWebm(ffmpegURL: ffmpeg, output: inputWebm)
+
+        let outputDir = tempDir.appendingPathComponent("outputs")
+        let engine = FFmpegMediaConverter(ffmpegURLProvider: { ffmpeg })
+        let settings = ConversionSettings(targetFormat: .mp4, outputDirectory: outputDir)
+        let job = ConversionJob(inputURL: inputWebm)
+
+        let result = await engine.convert(job: job, settings: settings)
+
+        switch result.status {
+        case .success(let outputURL):
+            XCTAssertTrue(FileManager.default.fileExists(atPath: outputURL.path))
+            XCTAssertEqual(outputURL.pathExtension.lowercased(), "mp4")
+            XCTAssertEqual(outputURL.lastPathComponent, "input.mp4")
+        case .failure(let reason):
+            XCTFail("Video conversion failed: \(reason)")
+        }
+    }
+
     func testFailureMessageWhenFFmpegMissing() async {
-        let engine = FFmpegAudioConverter(ffmpegURLProvider: { nil })
+        let engine = FFmpegMediaConverter(ffmpegURLProvider: { nil })
         let tempInput = FileManager.default.temporaryDirectory.appendingPathComponent("missing.wav")
         let settings = ConversionSettings(targetFormat: .mp3, outputDirectory: nil)
         let job = ConversionJob(inputURL: tempInput)
@@ -133,7 +163,7 @@ final class FFmpegAudioConverterTests: XCTestCase {
         try Data("dummy".utf8).write(to: inputWav)
 
         let outputDir = tempDir.appendingPathComponent("outputs")
-        let engine = FFmpegAudioConverter(ffmpegURLProvider: { failingFFmpeg })
+        let engine = FFmpegMediaConverter(ffmpegURLProvider: { failingFFmpeg })
         let settings = ConversionSettings(targetFormat: .mp3, outputDirectory: outputDir)
         let job = ConversionJob(inputURL: inputWav)
 
@@ -208,6 +238,34 @@ final class FFmpegAudioConverterTests: XCTestCase {
         if process.terminationStatus != 0 {
             let data = errPipe.fileHandleForReading.readDataToEndOfFile()
             let message = String(data: data, encoding: .utf8) ?? "Failed to generate input wav with ffmpeg"
+            XCTFail(message)
+        }
+    }
+
+    private func generateInputWebm(ffmpegURL: URL, output: URL) throws {
+        let process = Process()
+        process.executableURL = ffmpegURL
+        process.arguments = [
+            "-y",
+            "-f", "lavfi",
+            "-i", "testsrc=duration=1:size=320x240:rate=30",
+            "-f", "lavfi",
+            "-i", "anullsrc=r=44100:cl=stereo",
+            "-t", "1",
+            "-c:v", "libvpx",
+            "-c:a", "libvorbis",
+            output.path
+        ]
+
+        let errPipe = Pipe()
+        process.standardError = errPipe
+
+        try process.run()
+        process.waitUntilExit()
+
+        if process.terminationStatus != 0 {
+            let data = errPipe.fileHandleForReading.readDataToEndOfFile()
+            let message = String(data: data, encoding: .utf8) ?? "Failed to generate input webm with ffmpeg"
             XCTFail(message)
         }
     }
