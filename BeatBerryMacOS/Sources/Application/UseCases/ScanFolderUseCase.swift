@@ -17,7 +17,10 @@ public struct ScanFolderUseCase: Sendable {
 
     public init(
         fileScanner: any FileScanner,
-        supportedExtensions: Set<String> = ["m4a", "mp3", "wav", "flac", "ogg", "wma"]
+        supportedExtensions: Set<String> = [
+            "m4a", "mp3", "wav", "flac", "ogg", "wma",
+            "webm", "mp4", "avi", "mov", "mkv"
+        ]
     ) {
         self.fileScanner = fileScanner
         self.supportedExtensions = supportedExtensions

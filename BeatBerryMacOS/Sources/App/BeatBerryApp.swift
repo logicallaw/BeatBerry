@@ -19,7 +19,7 @@ struct BeatBerryApp: App {
     private let viewModel: ConversionViewModel
 
     init() {
-        let converter = FFmpegAudioConverter()
+        let converter = FFmpegMediaConverter()
         let fileScanner = LocalFileScanner()
         let addFilesUseCase = AddFilesUseCase()
         let scanFolderUseCase = ScanFolderUseCase(fileScanner: fileScanner)
