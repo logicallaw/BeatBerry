@@ -12,6 +12,7 @@ It uses a SwiftUI-based UI and a bundled FFmpeg engine, so users can convert aud
 <div align="center">
   <img src="public/app-introduce.png" alt="BeatBerry_app-introduce">
 </div>
+
 - **Intuitive GUI**: batch conversion via file/folder selection
 - **Audio formats**: `mp3`, `wav`, `flac`, `ogg`, `m4a`
 - **Video formats**: `webm`, `avi`, `mov`, `mkv` → `mp4`
